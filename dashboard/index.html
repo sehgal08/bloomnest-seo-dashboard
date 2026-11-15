@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BloomNest SEO Dashboard (demo)</title>
+<meta name="description" content="A weekly SEO dashboard for a parenting content site: what to fix, what worked, and where search is heading. Demo with synthetic data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Source+Serif+4:wght@400;600&display=swap">
+<link rel="stylesheet" href="dash-theme.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="dash-runtime.js" data-data-dir="../data"></script>
+<script src="dash-filters.js"></script>
+</head>
+<body>
+<div class="demo-banner">Demo with <b>synthetic data</b> for a fictional site, BloomNest. No real company data is used.</div>
+<div id="dash-root">
+<link rel="stylesheet" href="style.css">
+
+<div class="ms">
+<header class="ms-head" id="top">
+<div class="ms-head-text">
+<h1>BloomNest SEO Dashboard</h1>
+<p class="ms-take" id="takeaway">
+Last week article pages got <b class="dash-skeleton" data-source="kpis" data-field="value" data-where="key=Articles%7Cclicks%7C7">—</b> clicks from Google
+(<span data-source="kpis" data-field="change_pct" data-where="key=Articles%7Cclicks%7C7">—</span> vs the week before), and community Q&A pages got
+<b class="dash-skeleton" data-source="kpis" data-field="value" data-where="key=Community%20Q%26A%7Cimpressions%7C7">—</b> impressions.
+</p>
+<p class="ms-muted" id="freshness">Search Console figures cover <span data-source="kpis" data-field="period" data-where="key=Articles%7Cclicks%7C7">—</span>. Content counts and keywords come from the CMS and the search-data warehouse.</p>
+</div>
+<div class="ms-side">
+<div class="ms-chips ms-chan ms-topchan" id="top-chan" role="group" aria-label="Show web or app articles">
+<button class="ms-fchip" type="button" data-chan="web" title="Web articles and Q&A pages with Google Search numbers">Web view</button>
+<button class="ms-fchip" type="button" data-chan="app" title="Articles in the app (web and app-only) with app numbers">App view</button>
+</div>
+<label class="ms-lang" for="lang">Language
+<select id="lang"><option value="">All languages</option></select>
+</label>
+<a class="ms-planbtn" id="open-plan" href="#this-week">Plan our week</a>
+<span class="ms-muted ms-plan-note">This week’s tasks for the team</span>
+</div>
+</header>
+
+<nav class="ms-tabs" aria-label="Dashboard pages">
+<button class="ms-tab ms-main" type="button" id="tab-summary" data-group="summary" aria-pressed="true">Summary</button>
+<button class="ms-tab ms-main" type="button" id="tab-results" data-group="results" aria-pressed="false">Results</button>
+<button class="ms-tab ms-main" type="button" id="tab-plan" data-group="plan" aria-pressed="false">Plan</button>
+<button class="ms-tab ms-main" type="button" id="tab-health" data-group="health" aria-pressed="false">Search health</button>
+</nav>
+<div class="ms-subtabs" role="tablist" aria-label="Sections" id="subtabs">
+<button class="ms-subtab" role="tab" id="tab-overview" data-tab="overview" data-group="summary" aria-selected="true" hidden>Summary</button>
+<button class="ms-subtab" role="tab" id="tab-last-week" data-tab="last-week" data-group="results" aria-selected="false" hidden>Last week</button>
+<button class="ms-subtab" role="tab" id="tab-changelog" data-tab="changelog" data-group="results" aria-selected="false" hidden>All edits</button>
+<button class="ms-subtab" role="tab" id="tab-this-week" data-tab="this-week" data-group="plan" aria-selected="false" hidden>This week</button>
+<button class="ms-subtab" role="tab" id="tab-merge" data-tab="merge" data-group="plan" aria-selected="false" hidden>Clean-up</button>
+<button class="ms-subtab" role="tab" id="tab-keywords" data-tab="keywords" data-group="health" aria-selected="false" hidden>Keywords</button>
+<button class="ms-subtab" role="tab" id="tab-indexing" data-tab="indexing" data-group="health" aria-selected="false" hidden>Indexing</button>
+</div>
+
+<!-- ============ OVERVIEW ============ -->
+<section class="ms-page" id="overview" role="tabpanel" aria-labelledby="tab-overview">
+<div class="ms-card ms-kp" id="key-points">
+<h2>Key points</h2>
+<ul class="ms-kp-list ms-web" id="kp-web" data-source="key_points"></ul>
+<ul class="ms-kp-list ms-app" id="kp-app" data-source="key_points_app"></ul>
+<p class="ms-muted ms-kp-note">Written from the dashboard's own numbers each time it loads, all languages. Click a line to open that part.</p>
+</div>
+<div class="ms-sec">
+<div class="ms-card-head">
+<h2 id="ov-title">Scorecard</h2>
+<div class="ms-range" id="ov-range">
+<div class="ms-chips" id="ov-presets" role="group" aria-label="Period">
+<button class="ms-fchip" type="button" data-preset="7">Last 7 days</button>
+<button class="ms-fchip" type="button" data-preset="28">28 days</button>
+<button class="ms-fchip" type="button" data-preset="91">3 months</button>
+<button class="ms-fchip" type="button" data-preset="182">6 months</button>
+<button class="ms-fchip" type="button" data-preset="365">12 months</button>
+<button class="ms-fchip" type="button" data-preset="all"><span class="ms-web">All (16 months)</span><span class="ms-app">All (12 weeks)</span></button>
+</div>
+<div class="ms-dates">
+<label for="ov-from">From</label><input type="date" id="ov-from">
+<label for="ov-to">To</label><input type="date" id="ov-to">
+</div>
+</div>
+<p class="ms-muted" id="ov-range-text">—</p>
+</div>
+<div class="ms-segpick" id="ov-segpick">
+<div class="ms-chips ms-web" id="ov-pick-web" role="group" aria-label="Pages"></div>
+<div class="ms-chips ms-app" id="ov-pick-app" role="group" aria-label="Articles"></div>
+<p class="ms-muted ms-seghint" id="ov-seghint"></p>
+</div>
+<div class="ms-kgroups ms-web" id="ov-kpis" data-source="daily_trend"></div>
+<div class="ms-kgroups ms-app" id="ov-app-kpis" data-source="app_daily"></div>
+</div>
+<div class="ms-card ms-web" id="daily">
+<div class="ms-sec-head">
+<div class="ms-card-head"><h2>Daily trend with publishing</h2><p class="ms-muted">Last 13 weeks of Google Search. The two lanes under the chart are days we created or edited content: a bigger mark means more pages.</p></div>
+<div class="ms-tools">
+<select id="ov-seg" aria-label="Pages"><option>Articles</option><option>Community Q&A</option><option>Whole site</option></select>
+<select id="ov-metric" aria-label="Measure"><option value="clicks">Clicks</option><option value="impressions">Impressions</option><option value="ctr">CTR</option><option value="position">Average position</option></select>
+</div>
+</div>
+<div class="ms-legend"><span style="--sw: var(--ms-c0)">Google Search</span><span style="--sw: var(--ms-c2)">Created</span><span style="--sw: var(--ms-c1)">Edited</span></div>
+<div class="ms-chart dash-skeleton" id="chart-daily" data-source="daily_trend content_daily"></div>
+</div>
+<div class="ms-card ms-app" id="app-daily">
+<div class="ms-sec-head">
+<div class="ms-card-head"><h2>Daily app trend with publishing</h2><p class="ms-muted">App numbers for app articles, Android and iOS. Views count every way an article is opened; impressions and clicks count the recommended-article cards. The two lanes under the chart are days app articles were created or edited.</p></div>
+<div class="ms-tools">
+<select id="ov-app-seg" aria-label="Articles"><option>All app articles</option><option>Web articles in app</option><option>App-only articles</option></select>
+<select id="ov-app-metric" aria-label="Measure"><option value="views">Views</option><option value="impressions">Impressions</option><option value="clicks">Clicks</option><option value="ctr">CTR</option></select>
+</div>
+</div>
+<div class="ms-legend"><span style="--sw: var(--ms-c0)">App</span><span style="--sw: var(--ms-c2)">Created</span><span style="--sw: var(--ms-c1)">Edited</span></div>
+<div class="ms-chart dash-skeleton" id="chart-app-daily" data-source="app_daily app_content_daily"></div>
+</div>
+<div class="ms-grid ms-app">
+<div class="ms-card" id="app-movers-up">
+<div class="ms-card-head"><h2>Articles gaining app views</h2><p class="ms-muted" id="app-movers-note">Last week against the week before.</p></div>
+<div class="ms-scroll">
+<table data-source="app_movers" data-row-key="id" id="app-up-table"><thead><tr><th data-field="title">Article</th><th class="num" data-field="views_last_week">Views</th><th class="num" data-field="views_change">Change</th><th class="num" data-field="ctr_last_week">CTR</th></tr></thead><tbody></tbody></table>
+</div>
+<div class="ms-more"><button class="ms-btn" type="button" data-more="amu">Show all</button></div>
+</div>
+<div class="ms-card" id="app-movers-down">
+<div class="ms-card-head"><h2>Articles losing app views</h2><p class="ms-muted">Last week against the week before.</p></div>
+<div class="ms-scroll">
+<table data-source="app_movers" data-row-key="id" id="app-down-table"><thead><tr><th data-field="title">Article</th><th class="num" data-field="views_last_week">Views</th><th class="num" data-field="views_change">Change</th><th class="num" data-field="ctr_last_week">CTR</th></tr></thead><tbody></tbody></table>
+</div>
+<div class="ms-more"><button class="ms-btn" type="button" data-more="amd">Show all</button></div>
+</div>
+</div>
+<div class="ms-grid ms-web">
+<div class="ms-card" id="movers-up">
+<div class="ms-card-head"><h2>Articles gaining clicks</h2><p class="ms-muted">Last week against the week before.</p></div>
+<div class="ms-scroll">
+<table data-source="page_movers" data-row-key="page" id="up-table"><thead><tr><th data-field="title">Article</th><th class="num" data-field="clicks_last_week">Clicks</th><th class="num" data-field="clicks_change">Change</th><th class="num" data-field="pos_last_week">Pos.</th></tr></thead><tbody></tbody></table>
+</div>
+<div class="ms-more"><button class="ms-btn" type="button" data-more="mvu">Show all</button></div>
+</div>
+<div class="ms-card" id="movers-down">
+<div class="ms-card-head"><h2>Articles losing clicks</h2><p class="ms-muted">Last week against the week before.</p></div>
+<div class="ms-scroll">
+<table data-source="page_movers" data-row-key="page" id="down-table"><thead><tr><th data-field="title">Article</th><th class="num" data-field="clicks_last_week">Clicks</th><th class="num" data-field="clicks_change">Change</th><th class="num" data-field="pos_last_week">Pos.</th></tr></thead><tbody></tbody></table>
+</div>
+<div class="ms-more"><button class="ms-btn" type="button" data-more="mvd">Show all</button></div>
+</div>
+</div>
+</section>
+
+<!-- ============ THIS WEEK ============ -->
+<section class="ms-page" id="this-week" role="tabpanel" aria-labelledby="tab-this-week" hidden>
+
+<div class="ms-wrap ms-app">
+<div class="ms-tiles ms-strip" id="app-strip">
+<button class="ms-tile" type="button" data-ap-go="Create web version"><span class="ms-tile-label">Publish on web</span><span class="ms-big dash-skeleton" data-ap-count="Create web version" data-source="app_actions">—</span><span class="ms-tile-go">App-only articles readers want →</span></button>
+<button class="ms-tile" type="button" data-ap-go="Fix the card"><span class="ms-tile-label">Fix the card</span><span class="ms-big dash-skeleton" data-ap-count="Fix the card" data-source="app_actions">—</span><span class="ms-tile-go">Shown a lot, rarely tapped →</span></button>
+<button class="ms-tile" type="button" data-ap-go="Do SEO"><span class="ms-tile-label">Needs SEO</span><span class="ms-big dash-skeleton" data-ap-count="Do SEO" data-source="app_actions">—</span><span class="ms-tile-go">Popular in the app, weak on Google →</span></button>
+<button class="ms-tile" type="button" data-ap-go="Check the drop"><span class="ms-tile-label">Losing app views</span><span class="ms-big dash-skeleton" data-ap-count="Check the drop" data-source="app_actions">—</span><span class="ms-tile-go">Big drop last week →</span></button>
+</div>
+
+<div class="ms-card" id="app-actions">
+<div class="ms-card-head">
+<h2>App articles to work on</h2>
+<p class="ms-muted" id="ap-note">Articles in the app (web and app-only), last 4 full weeks of app data. Each dot is one article: further right means more card impressions, higher means a better card CTR, bigger means more views. The shaded corner is "fix the card": shown a lot, rarely tapped. Click a dot to see that article below.</p>
+</div>
+<div class="ms-chips" id="ap-chips" aria-label="Filter by what to do"></div>
+<div class="ms-chart ms-scatter dash-skeleton" id="chart-app-opps" data-source="app_actions"></div>
+<div class="ms-tools">
+<select id="ap-prio" aria-label="Priority"><option value="">Any priority</option><option>High</option><option>Medium</option><option>Low</option></select>
+<input type="search" id="ap-q" placeholder="Search titles" aria-label="Search app articles">
+<button class="ms-btn" type="button" id="ap-pick" hidden></button>
+</div>
+<div class="ms-scroll ms-tall">
+<table data-source="app_actions" data-row-key="key" id="ap-table">
+<thead><tr>
+<th data-field="priority">Priority</th>
+<th data-field="title">Article</th>
+<th data-field="action">What to do</th>
+<th data-field="fix">How and why</th>
+<th class="num" data-field="views_4w">App views 4 wks</th>
+<th class="num" data-field="impr_4w">Card impr.</th>
+<th class="num" data-field="ctr_4w">CTR</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="ap-count"></p><button class="ms-btn" type="button" data-more="ap">Show all</button></div>
+<details class="ms-def-box">
+<summary>How each idea and its priority are decided</summary>
+<div class="ms-def">
+<p><b>Create web version</b>: app-only article with 100+ app views in 4 weeks. It has no web page, so Google never sends it readers. If a web article with a similar title already exists, the row says so: add the content there instead of a new page.</p>
+<p><b>Fix the card</b>: 2,000+ card impressions in 4 weeks and a card CTR under half the typical CTR of app articles. Rewrite the card title or change the thumbnail.</p>
+<p><b>Do SEO</b>: web article with 100+ app views in 4 weeks but no meta title in the CMS, or under 10 Google clicks in 28 days.</p>
+<p><b>Check the drop</b>: 30+ app views the week before and at least 40% fewer last week. If it was edited around then, the row says so: edits seem to drop articles from app recommendations.</p>
+<p><b>Priority</b> is relative within each idea: the top 10% by payoff (app views; extra clicks for cards; views lost for drops) are High, the next 25% Medium. ⚠ marks articles with 300+ app views in 4 weeks: editing them may reduce their app reach.</p>
+</div>
+</details>
+</div>
+</div>
+
+<div class="ms-wrap ms-web">
+<div class="ms-tiles ms-strip" id="strip">
+<button class="ms-tile" type="button" id="go-high"><span class="ms-tile-label">High-priority articles</span><span class="ms-big dash-skeleton" data-source="week_summary" data-field="value" data-where="key=high_articles&amp;language=All">—</span><span class="ms-tile-go">See the list →</span></button>
+<button class="ms-tile" type="button" id="go-silent"><span class="ms-tile-label">Q&A with no Google impressions</span><span class="ms-big dash-skeleton" data-source="week_summary" data-field="value" data-where="key=silent_qa&amp;language=All">—</span><span class="ms-tile-go">See the list →</span></button>
+<button class="ms-tile" type="button" id="go-new"><span class="ms-tile-label">New content ideas</span><span class="ms-big dash-skeleton" data-source="week_summary" data-field="value" data-where="key=new_content&amp;language=All">—</span><span class="ms-tile-go">See trending searches →</span></button>
+<button class="ms-tile" type="button" id="go-nometa"><span class="ms-tile-label">Web articles with no meta title</span><span class="ms-big dash-skeleton" id="nometa-count" data-source="nometa_articles">—</span><span class="ms-tile-go">Add a meta title →</span></button>
+<button class="ms-tile" type="button" id="go-index"><span class="ms-tile-label">Pages not indexed</span><span class="ms-big dash-skeleton" data-source="week_summary" data-field="value" data-where="key=not_indexed&amp;language=All">—</span><span class="ms-tile-go">See indexing →</span></button>
+</div>
+
+<div class="ms-card" id="article-actions">
+<div class="ms-card-head">
+<h2>Articles to work on</h2>
+<p class="ms-muted">Article pages (/article/) with 300+ impressions in the last 28 days. Each dot is one article: further right means a worse position, higher means more impressions, bigger means more extra clicks if fixed. Click a dot to see that article below.</p>
+</div>
+<div class="ms-chart ms-scatter dash-skeleton" id="chart-opps" data-source="article_actions"></div>
+<div class="ms-chips" id="aa-chips" aria-label="Filter by fix type"></div>
+<div class="ms-tools">
+<select id="aa-prio" aria-label="Priority"><option value="">Any priority</option><option>High</option><option>Medium</option><option>Low</option></select>
+<input type="search" id="aa-q" placeholder="Search title or search term" aria-label="Search articles">
+<button class="ms-btn" type="button" id="aa-pick" hidden></button>
+</div>
+<div class="ms-scroll ms-tall">
+<table data-source="article_actions" data-row-key="page" id="aa-table">
+<thead><tr>
+<th data-field="priority">Priority</th>
+<th data-field="title">Article</th>
+<th data-field="bucket">Fix type</th>
+<th data-field="fix">What to do</th>
+<th class="num" data-field="impr_28d">Impr. 28d</th>
+<th class="num" data-field="pos_28d">Pos.</th>
+<th class="num" data-field="est_extra_clicks">Extra clicks/28d</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="aa-count"></p><button class="ms-btn" type="button" data-more="aa">Show all</button></div>
+<details class="ms-def-box">
+<summary>How priority is worked out</summary>
+<div class="ms-def">
+<p><b>Losing clicks</b>: clicks fell 25% or more week over week, from at least 40. Payoff is the lost weekly clicks × 4.</p>
+<p><b>Fix title &amp; meta</b>: position 10 or better with 500+ impressions, but CTR is under half of what our own articles typically get at that position. Payoff is the CTR gap × impressions.</p>
+<p><b>Move up</b>: average position 3.5–15 with 1,000+ impressions. Payoff assumes it climbs 3 places (at best to #3). The fix names the next searches it half-ranks for.</p>
+<p><b>Rework for intent</b>: position worse than 15 with 3,000+ impressions. Payoff assumes it reaches position 10.</p>
+<p>Typical CTR by position is the median CTR of our own article pages in that position band, so it reflects AI Overviews and other features on these searches. High = the top 10% of payoffs, Medium = the next 25%. Articles edited in the last 14 days drop one level so the change has time to show.</p>
+<p>The shaded band on the chart is positions 4–10: page one, but not yet top 3. Hindi URLs that Search Console cut off link to Search Console instead of the page.</p>
+</div>
+</details>
+</div>
+
+
+<div class="ms-card" id="qa-actions">
+<div class="ms-card-head">
+<h2>Community Q&A to work on</h2>
+<p class="ms-muted">Curated question pages (/questions/ with an SEO title), last 28 days. The strip shows where Q&A pages drop out before they earn clicks; the biggest drop is in red (hover a percentage for the count).</p>
+</div>
+<div class="ms-funnel" id="funnel" data-source="qa_funnel"></div>
+<div class="ms-chips" id="ca-chips" aria-label="Filter by fix type"></div>
+<div class="ms-tools"><input type="search" id="ca-q" placeholder="Search" aria-label="Search Q&A pages"></div>
+<div class="ms-scroll ms-tall">
+<table data-source="qa_actions" data-row-key="page" id="ca-table">
+<thead><tr>
+<th data-field="priority">Priority</th>
+<th data-field="title">Q&A</th>
+<th data-field="bucket">Fix type</th>
+<th data-field="fix">What to do</th>
+<th class="num" data-field="impr_28d">Impr. 28d</th>
+<th class="num" data-field="pos_28d">Pos.</th>
+<th class="num" data-field="age_days">Age (days)</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="ca-count"></p><button class="ms-btn" type="button" data-more="ca">Show all</button></div>
+</div>
+
+<div class="ms-card" id="keyword-actions">
+<div class="ms-card-head">
+<h2>Trending searches and what to change</h2>
+<p class="ms-muted">Searches whose impressions grew 30%+ last week (300+ impressions, brand searches left out), matched to the page of ours Google shows most for them over the last 28 days: any page type (articles, Q&A pages, baby names, products, tools…). Not split by language.</p>
+</div>
+<div class="ms-chips" id="ka-chips" aria-label="Filter by action"></div>
+<div class="ms-scroll ms-tall">
+<table data-source="keyword_actions" data-row-key="query" id="ka-table">
+<thead><tr>
+<th data-field="query">Search</th>
+<th data-field="action">Action</th>
+<th data-field="fix">What to change</th>
+<th class="num" data-field="impr_last_week">Impr. last week</th>
+<th class="num" data-field="growth_pct">Growth</th>
+<th class="num" data-field="pos_last_week">Pos.</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="ka-count"></p><button class="ms-btn" type="button" data-more="ka">Show all</button></div>
+</div>
+</div>
+</section>
+
+<!-- ============ MERGE & REDIRECTS ============ -->
+<section class="ms-page" id="merge" role="tabpanel" aria-labelledby="tab-merge" hidden>
+<p class="ms-app ms-webonly">Web data only: this page shows Google Search data, so it looks the same in App view. App numbers are on Summary, Results and Plan → This week.</p>
+<div class="ms-sec">
+<div class="ms-card-head">
+<h2>Clean-up</h2>
+<p class="ms-muted">Duplicate articles to redirect, our own pages competing for the same Google searches, and whether redirects work. Search data: last 28 days. Redirect check: <span id="rd-when">—</span>.</p>
+</div>
+<div class="ms-cu-tiles">
+<button class="ms-tile" type="button" id="cu-nometa"><span class="ms-tile-label">Web articles with no meta title</span><span class="ms-big dash-skeleton" id="cu-nometa-count" data-source="nometa_articles">—</span><span class="ms-tile-go">Add a meta title, below ↓</span></button>
+<div class="ms-tiles" id="mg-tiles" data-source="redirect_ideas merge_candidates redirects"></div>
+</div>
+</div>
+<div class="ms-card" id="nometa-actions">
+<div class="ms-sec-head">
+<div class="ms-card-head">
+<h2>Add a meta title</h2>
+<p class="ms-muted">Live web articles with no meta title in the CMS, so the website uses the H1 as the page title. Read live from the CMS: a page drops off as soon as it gets a meta title. Google numbers: last 28 days. "Suggested meta title" is the H1 without its English gloss, a starting point to edit.</p>
+</div>
+<div class="ms-tools">
+<select id="nm-prio" aria-label="Priority"><option value="">Any priority</option><option>High</option><option>Medium</option><option>Low</option></select>
+<input type="search" id="nm-q" placeholder="Search titles" aria-label="Search articles with no meta title">
+</div>
+</div>
+<div class="ms-scroll ms-tall">
+<table data-source="nometa_articles" data-row-key="id" id="nm-table">
+<thead><tr>
+<th data-field="priority">Priority</th>
+<th data-field="title">Article (H1 = page title today)</th>
+<th class="num" data-field="impr_28d">Google impr. 28d</th>
+<th class="num" data-field="clicks_28d">Clicks</th>
+<th class="num" data-field="app_views_4w">App views 4 wks</th>
+<th data-field="suggested">Suggested meta title</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="nm-count"></p><button class="ms-btn" type="button" data-more="nm">Show all</button></div>
+<details class="ms-def-box">
+<summary>Which pages are listed and how priority is worked out</summary>
+<div class="ms-def">
+<p>Published articles with an /article/ page and an empty meta title.</p>
+<p><b>Priority</b>: among pages Google already shows, the top 10% by impressions are High and the next 25% Medium; the rest, and pages with no impressions, are Low. ⚠ marks articles with 300+ app views in 4 weeks: editing them may reduce their app reach.</p>
+</div>
+</details>
+</div>
+
+<div class="ms-card" id="ri-list">
+<div class="ms-sec-head">
+<div class="ms-card-head">
+<h2>Redirect ideas: duplicate articles</h2>
+<p class="ms-muted">Articles with the same SEO title in the same language, compared word by word. Keep the winner as it is; 301-redirect the other copies to it. Winner = most Google clicks in 28 days, then impressions, then the fuller and older page.</p>
+</div>
+<input type="search" id="ri-q" placeholder="Search title or URL" aria-label="Search redirect ideas">
+</div>
+<div class="ms-chips" id="ri-chips" aria-label="Filter by what to do"></div>
+<div class="ms-scroll ms-tall">
+<table data-source="redirect_ideas" data-row-key="key" id="ri-table">
+<thead><tr>
+<th data-field="action">What to do</th>
+<th data-field="winner_title">Keep (winner)</th>
+<th data-field="title">Redirect this page</th>
+<th class="num" data-field="overlap">Same content</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="ri-count"></p><button class="ms-btn" type="button" data-more="ri">Show all</button></div>
+<details class="ms-def-box">
+<summary>How each idea is decided</summary>
+<div class="ms-def">
+<p><b>301 to the winner</b>: 60% or more of the words are the same. It is a copy: redirect it, update links that point to it, and drop it from the sitemap.</p>
+<p><b>Merge, then 301</b>: 30–60% the same. Move anything useful that the winner lacks into the winner first, then redirect.</p>
+<p><b>Fix the title</b>: under 30% the same. The pages are different and only the title was copied: give this page its own title instead of redirecting it.</p>
+<p>Same content = shared distinct words ÷ all distinct words of the two bodies. Live from the CMS; Google numbers from the last 28 days.</p>
+</div>
+</details>
+</div>
+
+<div class="ms-card" id="mg-list">
+<div class="ms-sec-head">
+<div class="ms-card-head">
+<h2>Pages competing with each other</h2>
+<p class="ms-muted">Pairs of our pages that each take 15%+ of the impressions on the same searches. Suggested fix per pair; open a row for the searches they share.</p>
+</div>
+<input type="search" id="mg-q" placeholder="Search page or search term" aria-label="Search pairs">
+</div>
+<div class="ms-chips" id="mg-chips" aria-label="Filter by suggested fix"></div>
+<div class="ms-scroll ms-tall">
+<table data-source="merge_candidates" data-row-key="pair" id="mg-table">
+<thead><tr>
+<th data-field="action">Suggested fix</th>
+<th data-field="winner_title">Keep (stronger page)</th>
+<th data-field="loser_title">Other page</th>
+<th class="num" data-field="shared_impr">Shared impr. 28d</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="mg-count"></p><button class="ms-btn" type="button" data-more="mg">Show all</button></div>
+<details class="ms-def-box">
+<summary>How the fix is chosen</summary>
+<div class="ms-def">
+<p><b>Merge + 301</b>: same kind of page, same language, no different focus in the titles, the stronger page gets 3× the clicks or more, and at least 40% of the other page's impressions come from the shared searches. Move the useful parts of the other page into the stronger one, then 301-redirect it.</p>
+<p><b>Keep both, differentiate</b>: the titles show a different focus (girl vs boy, a different language or community, a different week, month or trimester), or both pages are strong. Make each title and intro say its focus and link the two.</p>
+<p><b>Keep both, link</b>: an article and a Q&A page, or the same topic in two languages. They serve different readers: link them to each other.</p>
+<p><b>Merged</b>: the other page already 301-redirects to the stronger page (from the redirect check).</p>
+</div>
+</details>
+</div>
+
+<div class="ms-card" id="rd-issues">
+<div class="ms-sec-head">
+<div class="ms-card-head">
+<h2>Redirect and broken-page problems</h2>
+<p class="ms-muted">Top article pages, every Q&A page, changed URLs and competing pages, fetched without following redirects: 404s, chains, temporary (302) redirects, loops and redirects to the homepage.</p>
+</div>
+<select id="rd-kind" aria-label="Problem"><option value="">All problems</option></select>
+</div>
+<div class="ms-scroll ms-tall">
+<table data-source="redirects" data-row-key="path" id="rd-table">
+<thead><tr><th data-field="issues">Problem</th><th data-field="path">URL</th><th data-field="chain">Answer</th><th data-field="final_url">Ends at</th><th data-field="reason">Checked because</th></tr></thead><tbody></tbody>
+</table>
+</div>
+<p class="ms-muted" id="rd-count"></p>
+</div>
+
+<div class="ms-card" id="mg-after">
+<div class="ms-card-head">
+<h2>After the merge</h2>
+<p class="ms-muted">Pairs where the other page already 301-redirects to the stronger page: the stronger page's daily clicks for the last 4 weeks.</p>
+</div>
+<div id="mg-after-body" data-source="merge_candidates article_daily"></div>
+</div>
+</section>
+
+<!-- ============ LAST WEEK ============ -->
+<section class="ms-page" id="last-week" role="tabpanel" aria-labelledby="tab-last-week" hidden>
+<div class="ms-weekpick" id="lw-pick">
+<button class="ms-btn" type="button" id="lw-prev">← Earlier week</button>
+<select id="lw-week" aria-label="Week to review"></select>
+<button class="ms-btn" type="button" id="lw-next">Later week →</button>
+<button class="ms-btn" type="button" id="lw-latest" hidden>Back to last week</button>
+</div>
+<div class="ms-sec">
+<div class="ms-card-head">
+<h2 id="lw-title">What we published last week</h2>
+<p class="ms-muted ms-web">Monday to Sunday, from the CMS, all languages. Updated counts pages whose latest edit fell in that week and that were created earlier; a page edited again later counts in its latest week only.</p>
+<p class="ms-muted ms-app">App articles, Monday to Sunday, from the CMS, all languages. Web articles are in the app and on the website; app-only articles are in the app only. Updated counts articles whose latest edit fell in that week and that were created earlier.</p>
+</div>
+<div class="ms-tiles ms-app">
+<div class="ms-tile"><span class="ms-tile-label">Web articles created</span><span class="ms-big dash-skeleton" data-source="app_content_weekly" data-field="created" data-where="content_type=Web%20article" data-week="this">—</span><span class="ms-delta ms-flat">Week before: <span data-source="app_content_weekly" data-field="created" data-where="content_type=Web%20article" data-week="before">—</span></span></div>
+<div class="ms-tile"><span class="ms-tile-label">Web articles updated</span><span class="ms-big dash-skeleton" data-source="app_content_weekly" data-field="updated" data-where="content_type=Web%20article" data-week="this">—</span><span class="ms-delta ms-flat">Week before: <span data-source="app_content_weekly" data-field="updated" data-where="content_type=Web%20article" data-week="before">—</span></span></div>
+<div class="ms-tile"><span class="ms-tile-label">App-only articles created</span><span class="ms-big dash-skeleton" data-source="app_content_weekly" data-field="created" data-where="content_type=App-only%20article" data-week="this">—</span><span class="ms-delta ms-flat">Week before: <span data-source="app_content_weekly" data-field="created" data-where="content_type=App-only%20article" data-week="before">—</span></span></div>
+<div class="ms-tile"><span class="ms-tile-label">App-only articles updated</span><span class="ms-big dash-skeleton" data-source="app_content_weekly" data-field="updated" data-where="content_type=App-only%20article" data-week="this">—</span><span class="ms-delta ms-flat">Week before: <span data-source="app_content_weekly" data-field="updated" data-where="content_type=App-only%20article" data-week="before">—</span></span></div>
+</div>
+<div class="ms-tiles ms-web">
+<div class="ms-tile"><span class="ms-tile-label">Articles created</span><span class="ms-big dash-skeleton" data-source="content_weekly" data-field="created" data-where="content_type=Article" data-week="this">—</span><span class="ms-delta ms-flat">Week before: <span data-source="content_weekly" data-field="created" data-where="content_type=Article" data-week="before">—</span></span></div>
+<div class="ms-tile"><span class="ms-tile-label">Articles updated</span><span class="ms-big dash-skeleton" data-source="content_weekly" data-field="updated" data-where="content_type=Article" data-week="this">—</span><span class="ms-delta ms-flat">Week before: <span data-source="content_weekly" data-field="updated" data-where="content_type=Article" data-week="before">—</span></span></div>
+<div class="ms-tile"><span class="ms-tile-label">Q&A created</span><span class="ms-big dash-skeleton" data-source="content_weekly" data-field="created" data-where="content_type=Community%20Q%26A" data-week="this">—</span><span class="ms-delta ms-flat">Week before: <span data-source="content_weekly" data-field="created" data-where="content_type=Community%20Q%26A" data-week="before">—</span></span></div>
+<div class="ms-tile"><span class="ms-tile-label">Q&A updated</span><span class="ms-big dash-skeleton" data-source="content_weekly" data-field="updated" data-where="content_type=Community%20Q%26A" data-week="this">—</span><span class="ms-delta ms-flat">Week before: <span data-source="content_weekly" data-field="updated" data-where="content_type=Community%20Q%26A" data-week="before">—</span></span></div>
+</div>
+</div>
+
+<div class="ms-sec">
+<div class="ms-card-head">
+<h2 id="lw-perf-title">How content performed last week</h2>
+<p class="ms-muted" id="lw-range-text">—</p>
+</div>
+<div class="ms-kgroups ms-web" id="review-kpis" data-source="daily_trend"></div>
+<div class="ms-kgroups ms-app" id="review-app-kpis" data-source="app_daily"></div>
+</div>
+
+<div class="ms-chips ms-chartpick" id="lw-chartpick" role="group" aria-label="Which per-week chart"></div>
+<div class="ms-grid ms-app">
+<div class="ms-card" id="app-weekly-web">
+<div class="ms-card-head"><h2>Web articles per week</h2><p class="ms-muted">App articles with a web page, created and updated, the 8 weeks up to the picked week (highlighted).</p></div>
+<div class="ms-legend"><span style="--sw: var(--ms-c0)">Created</span><span style="--sw: var(--ms-c1)">Updated</span></div>
+<div class="ms-chart ms-small dash-skeleton" id="chart-app-weekly-w" data-source="app_content_weekly"></div>
+</div>
+<div class="ms-card" id="app-weekly-app">
+<div class="ms-card-head"><h2>App-only articles per week</h2><p class="ms-muted">App articles with no web page, created and updated, the 8 weeks up to the picked week (highlighted).</p></div>
+<div class="ms-legend"><span style="--sw: var(--ms-c0)">Created</span><span style="--sw: var(--ms-c1)">Updated</span></div>
+<div class="ms-chart ms-small dash-skeleton" id="chart-app-weekly-a" data-source="app_content_weekly"></div>
+</div>
+</div>
+<div class="ms-grid ms-web">
+<div class="ms-card" id="weekly-articles">
+<div class="ms-card-head"><h2>Articles per week</h2><p class="ms-muted">Created and updated, the 8 weeks up to the picked week (highlighted).</p></div>
+<div class="ms-legend"><span style="--sw: var(--ms-c0)">Created</span><span style="--sw: var(--ms-c1)">Updated</span></div>
+<div class="ms-chart ms-small dash-skeleton" id="chart-weekly-a" data-source="content_weekly"></div>
+</div>
+<div class="ms-card" id="weekly-qa">
+<div class="ms-card-head"><h2>Community Q&A per week</h2><p class="ms-muted">Created and updated, the 8 weeks up to the picked week (highlighted).</p></div>
+<div class="ms-legend"><span style="--sw: var(--ms-c0)">Created</span><span style="--sw: var(--ms-c1)">Updated</span></div>
+<div class="ms-chart ms-small dash-skeleton" id="chart-weekly-c" data-source="content_weekly"></div>
+</div>
+</div>
+
+<div class="ms-card ms-app" id="app-lastweek-work">
+<div class="ms-sec-head">
+<div class="ms-card-head">
+<h2 id="app-lw-work-title">Last week's work in the app, page by page</h2>
+<p class="ms-muted">Each app article created or updated that week (web and app-only), with its app numbers for the same week: impressions and clicks of its recommended-article card, CTR, and views (opened any way). New articles usually need a few days to be shown in the app.</p>
+</div>
+<div class="ms-tools">
+<select id="app-lw-type" aria-label="Article type"><option value="">Web and app-only articles</option><option>Web article</option><option>App-only article</option></select>
+<select id="app-lw-action" aria-label="Created or updated"><option value="">Created and updated</option><option>Created</option><option>Updated</option></select>
+</div>
+</div>
+<div class="ms-scroll ms-tall">
+<table data-source="app_lastweek_work" data-row-key="id" id="app-lw-table">
+<thead><tr>
+<th data-field="content_type">Type</th>
+<th data-field="action">Action</th>
+<th data-field="title">Article</th>
+<th data-field="date">Date</th>
+<th class="num" data-field="impressions">Impr.</th>
+<th class="num" data-field="clicks">Clicks</th>
+<th class="num" data-field="ctr">CTR</th>
+<th class="num" data-field="views">Views</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="app-lw-count"></p><button class="ms-btn" type="button" data-more="alw">Show all</button></div>
+</div>
+
+<div class="ms-card ms-web" id="lastweek-work">
+<div class="ms-sec-head">
+<div class="ms-card-head">
+<h2 id="lw-work-title">Last week's work, page by page</h2>
+<p class="ms-muted" id="lw-work-note">Each page created or updated that week, with its Search Console numbers for the same week, the top 3 Google searches it showed up for (by impressions, with position), whether those match its target keyword (Q&A pages: the keyword field; articles: the meta title or the H1, whichever matches better; similar words such as bedtime and sleep count as the same), and its indexing status. New pages usually need 1–2 weeks to collect impressions.</p>
+</div>
+<div class="ms-tools">
+<select id="lw-type" aria-label="Content type"><option value="">Articles and Q&A pages</option><option>Article</option><option>Community Q&A</option></select>
+<select id="lw-action" aria-label="Created or updated"><option value="">Created and updated</option><option>Created</option><option>Updated</option></select>
+<select id="lw-target" aria-label="Target keyword check"><option value="">Any target check</option><option>On target</option><option>Off target</option><option>Related</option><option>Not ranking for it</option></select>
+</div>
+</div>
+<div class="ms-scroll ms-tall">
+<table data-source="lastweek_work" data-row-key="path" id="lw-table">
+<thead><tr>
+<th data-field="content_type">Type</th>
+<th data-field="action">Action</th>
+<th data-field="title">Page</th>
+<th data-field="date">Date</th>
+<th class="num" data-field="impr_last_week">Impr.</th>
+<th class="num" data-field="clicks_last_week">Clicks</th>
+<th class="num" data-field="pos_last_week">Pos.</th>
+<th data-field="top_searches">Top searches</th>
+<th data-field="indexing">Indexing</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="lw-count"></p><button class="ms-btn" type="button" data-more="lw">Show all</button></div>
+</div>
+
+<div class="ms-card ms-app" id="app-update-impact">
+<div class="ms-sec-head">
+<div class="ms-card-head">
+<h2>Did our updates work in the app?</h2>
+<p class="ms-muted">Always the most recent edits, whatever week is picked above. App articles (web and app-only) with 1+ app view a day, edited in the last 3 weeks of app data: average app views a day in the 7 days before the edit against the days after it (up to 7). Edits from the last 2 days wait until there is enough to compare.</p>
+</div>
+<p class="ms-big" id="app-ui-score" data-source="app_update_impact">—</p>
+</div>
+<div class="ms-scroll ms-tall">
+<table data-source="app_update_impact" data-row-key="id" id="app-ui-table">
+<thead><tr>
+<th data-field="title">Article</th>
+<th data-field="updated_at">Edited</th>
+<th class="num" data-field="views_before_per_day">Views/day before</th>
+<th class="num" data-field="views_after_per_day">Views/day after</th>
+<th class="num" data-field="change_pct">Change</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="app-ui-count"></p><button class="ms-btn" type="button" data-more="aui">Show all</button></div>
+</div>
+
+<div class="ms-card ms-web" id="update-impact">
+<div class="ms-sec-head">
+<div class="ms-card-head">
+<h2>Did our updates work?</h2>
+<p class="ms-muted">Always the most recent edits, whatever week is picked above. Top article pages (1+ click a day) edited in the last 3 weeks: average daily clicks in the 7 days before the edit against the days after it (up to 7). Edits from the last 2 days of Search Console data wait until there is enough to compare.</p>
+</div>
+<p class="ms-big" id="ui-score" data-source="update_impact">—</p>
+</div>
+<div class="ms-scroll ms-tall">
+<table data-source="update_impact" data-row-key="page" id="ui-table">
+<thead><tr>
+<th data-field="title">Article</th>
+<th data-field="updated_at">Edited</th>
+<th class="num" data-field="clicks_before_per_day">Clicks/day before</th>
+<th class="num" data-field="clicks_after_per_day">Clicks/day after</th>
+<th class="num" data-field="change_pct">Change</th>
+<th class="num" data-field="pos_after">Position before → after</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="ui-count"></p><button class="ms-btn" type="button" data-more="ui">Show all</button></div>
+</div>
+</section>
+
+<!-- ============ CONTENT CHANGELOG ============ -->
+<section class="ms-page" id="changelog" role="tabpanel" aria-labelledby="tab-changelog" hidden>
+
+<div class="ms-wrap ms-app">
+<div class="ms-sec">
+<div class="ms-card-head">
+<h2>Changelog in the app</h2>
+<p class="ms-muted">Every edit to app articles (web and app-only), one row per article per day, newest first: what changed, and what happened in the app afterwards. Saved daily from the CMS change feed; edits to articles with no meta title and app-only articles are saved from the start of the detailed history.</p>
+<p class="ms-cl-summary" id="cla-summary" data-source="changelog_app_view">—</p>
+</div>
+</div>
+<div class="ms-card" id="cla-list">
+<div class="ms-sec-head">
+<p class="ms-muted" id="cla-range"></p>
+<div class="ms-tools">
+<select id="cla-type" aria-label="Article type"><option value="">Web and app-only articles</option><option>Web article</option><option>App-only article</option></select>
+<label class="ms-muted" for="cla-fmt"><input type="checkbox" id="cla-fmt" checked> Hide formatting-only edits</label>
+<input type="search" id="cla-q" placeholder="Search title or URL" aria-label="Search app edits">
+</div>
+</div>
+<div class="ms-chips" id="cla-chips" aria-label="Filter by what changed"></div>
+<div class="ms-scroll ms-tall">
+<table data-source="changelog_app_view" data-row-key="key" id="cla-table">
+<thead><tr>
+<th data-field="date">Date</th>
+<th data-field="name">Article</th>
+<th data-field="changed">What changed</th>
+<th class="num" data-field="views_pct">App views/day before → after</th>
+<th class="num" data-field="impr_pct">Card impr./day before → after</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="cla-count"></p><button class="ms-btn" type="button" data-more="cla">Show all</button></div>
+<details class="ms-def-box">
+<summary>How to read this</summary>
+<div class="ms-def">
+<p><b>App views/day</b>: average app views a day (Android and iOS, opened any way) in the 7 days before the edit against the days after it (at least 3, up to 7). <b>Card impr./day</b>: the same for impressions of the recommended-article card. App data is refreshed on Mondays, so an edit is measured about a week later.</p>
+<p>Flags: <b>Dropped from app after edit</b>: card impressions in the 3 days after the edit fell to 20% or less of the week before (from 50+ a day): the app seems to have stopped recommending it. <b>Bulk edit</b>: saved in the same second as 20+ other articles, a mass update rather than a hand edit.</p>
+</div>
+</details>
+</div>
+</div>
+
+<div class="ms-wrap ms-web">
+<div class="ms-sec">
+<div class="ms-card-head">
+<h2>Changelog</h2>
+<p class="ms-muted" id="cl-note">Every edit to SEO articles and community Q&A pages, one row per page per day, newest first: what changed, before and after, and what happened to clicks. Saved daily from the CMS change feed, which keeps only 7 days, so history starts on the first day it was saved.</p>
+</div>
+<div class="ms-tiles" id="cl-tiles" data-source="changelog_view"></div>
+</div>
+<div class="ms-card" id="cl-list">
+<div class="ms-sec-head">
+<div class="ms-cl-picks"><div class="ms-chips" id="cl-typepick" role="group" aria-label="Pages"></div><div class="ms-chips" id="cl-periodpick" role="group" aria-label="Period"></div></div>
+<p class="ms-muted" id="cl-range"></p>
+<div class="ms-tools">
+<select id="cl-type" class="ms-hide" aria-label="Content type"><option value="">Articles and Q&A pages</option><option>Article</option><option>Community Q&A</option></select>
+<label class="ms-muted" for="cl-fmt"><input type="checkbox" id="cl-fmt" checked> Hide formatting-only edits</label>
+<input type="search" id="cl-q" placeholder="Search title or URL" aria-label="Search edits">
+</div>
+</div>
+<div class="ms-chips" id="cl-chips" aria-label="Filter by what changed"></div>
+<div class="ms-scroll ms-tall">
+<table data-source="changelog_view" data-row-key="key" id="cl-table">
+<thead><tr>
+<th data-field="date">Date</th>
+<th data-field="name">Page</th>
+<th data-field="changed">What changed</th>
+<th class="num" data-field="words_after">Body words</th>
+<th class="num" data-field="effect_pct">Clicks/day before → after</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="cl-count"></p><button class="ms-btn" type="button" data-more="cl">Show all</button></div>
+<details class="ms-def-box">
+<summary>How to read this</summary>
+<div class="ms-def">
+<p><b>Body</b>: the text changed (word count or H2/H3 sections). <b>Formatting</b>: the HTML changed but the words and sections did not (links, bold, spacing).</p>
+<p>Before is the page as it was before its first edit that day; after is the page after its last edit that day. An empty "before" means the field was blank.</p>
+<p><b>Clicks/day</b>: average daily Google clicks in the 7 days before the edit against the days after it (at least 3, up to 7). It needs 3 days of Search Console data after the edit (Search Console runs 1–2 days behind), so an edit is measured about 4–5 days later. Pages with very little Google traffic and Q&A pages have no daily data; the cell says why.</p>
+<p>Flags: <b>meta title changed, description not</b> (the snippet may no longer match the title); <b>much shorter</b> (body lost more than 20% of its words).</p>
+</div>
+</details>
+</div>
+
+<div class="ms-card" id="cl-older">
+<div class="ms-sec-head">
+<div class="ms-card-head">
+<h2>Earlier edits (date only)</h2>
+<p class="ms-muted">Pages last edited in the 12 months before the detailed history starts. The CMS keeps only each page's latest edit date, so this shows when a page was last edited but not what changed, and earlier edits of the same page are not listed. Clicks before → after appear where daily click data covers the edit (from mid-September).</p>
+</div>
+</div>
+<div class="ms-sec-head">
+<div class="ms-chips" id="old-period" role="group" aria-label="Earlier edits period">
+<button class="ms-fchip" type="button" data-days="30" aria-pressed="false">Last 30 days</button>
+<button class="ms-fchip" type="button" data-days="90" aria-pressed="false">90 days</button>
+<button class="ms-fchip" type="button" data-days="182" aria-pressed="false">6 months</button>
+<button class="ms-fchip" type="button" data-days="all" aria-pressed="true">All 12 months</button>
+</div>
+<div class="ms-tools">
+<select id="old-month" aria-label="Month"><option value="">All months</option></select>
+<select id="old-type" aria-label="Content type"><option value="">Articles and Q&A pages</option><option>Article</option><option>Community Q&A</option></select>
+<select id="old-effect" aria-label="Clicks"><option value="">All pages</option><option value="measured">With clicks before → after</option><option value="up">Clicks went up</option><option value="down">Clicks went down</option></select>
+<input type="search" id="old-q" placeholder="Search title or URL" aria-label="Search earlier edits">
+</div>
+</div>
+<div class="ms-scroll ms-tall">
+<table data-source="older_view" data-row-key="key" id="old-table">
+<thead><tr>
+<th data-field="last_edited">Last edited</th>
+<th data-field="name">Page</th>
+<th data-field="created">Created</th>
+<th class="num" data-field="effect_pct">Clicks/day before → after</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="old-count"></p><button class="ms-btn" type="button" data-more="old">Show all</button></div>
+</div>
+</div>
+</section>
+
+<!-- ============ KEYWORDS ============ -->
+<section class="ms-page" id="keywords" role="tabpanel" aria-labelledby="tab-keywords" hidden>
+<p class="ms-app ms-webonly">Web data only: this page shows Google Search data, so it looks the same in App view. App numbers are on Summary, Results and Plan → This week.</p>
+<div class="ms-tiles" id="kt-tiles" data-source="tracker_summary"></div>
+<div class="ms-card" id="tracker">
+<div class="ms-sec-head">
+<div class="ms-card-head">
+<h2>Keyword tracker</h2>
+<p class="ms-muted">The 25 non-brand searches with the most impressions over the last 4 weeks. Each cell is that week's average position. From the search-data warehouse, all languages. "Our page Google shows" is the page with the most impressions for that search over the last 28 days (any page type, from Search Console); "+ more pages" lists our other pages that show for it.</p>
+</div>
+<input type="search" id="kt-q" placeholder="Search keywords" aria-label="Search keywords">
+</div>
+<div class="ms-heat-key"><span class="ms-h1">Top 3</span><span class="ms-h2">4–6</span><span class="ms-h3">7–10</span><span class="ms-h4">11–20</span><span class="ms-h5">20+</span></div>
+<div class="ms-scroll ms-tall">
+<table class="ms-heat" data-source="tracker_heat" data-row-key="query" id="kt-table">
+<thead><tr id="kt-head">
+<th data-field="query">Search</th>
+<th data-field="main_page">Our page Google shows</th>
+<th class="num" data-field="week_1">—</th><th class="num" data-field="week_2">—</th><th class="num" data-field="week_3">—</th><th class="num" data-field="week_4">—</th>
+<th class="num" data-field="week_5">—</th><th class="num" data-field="week_6">—</th><th class="num" data-field="week_7">—</th><th class="num" data-field="week_8">—</th>
+<th class="num" data-field="pos_change">Change</th>
+<th class="num" data-field="impr_last_week">Impr. last week</th>
+</tr></thead><tbody></tbody>
+</table>
+</div>
+</div>
+</section>
+
+<!-- ============ INDEXING ============ -->
+<section class="ms-page" id="indexing" role="tabpanel" aria-labelledby="tab-indexing" hidden>
+<p class="ms-app ms-webonly">Web data only: this page shows Google Search data, so it looks the same in App view. App numbers are on Summary, Results and Plan → This week.</p>
+<div class="ms-sec">
+<div class="ms-card-head">
+<h2>Indexing health</h2>
+<p class="ms-muted">URL inspection checks every community Q&A page and last week's new and updated articles each week (Google allows about 2,000 checks a day). The section below covers every article.</p>
+</div>
+<div class="ms-tiles" id="index-tiles" data-source="index_summary"></div>
+</div>
+<div class="ms-card" id="all-articles">
+<div class="ms-card-head">
+<h2>Every SEO article in Google search</h2>
+<p class="ms-muted">All articles with an SEO title in the CMS, checked against Google Search Console for the last 28 days. An article with any impression is indexed. One with no impressions is either not indexed or indexed but not ranking for anything; URL inspection above tells which for the pages it covers.</p>
+</div>
+<div class="ms-covtop" id="cov-top" data-source="coverage_summary"></div>
+<div class="ms-grid">
+<div class="ms-sec">
+<h3>By language</h3>
+<div class="ms-covbars" id="cov-lang" data-source="coverage_summary"></div>
+</div>
+<div class="ms-sec">
+<h3>No impressions, by year created</h3>
+<div class="ms-covbars" id="cov-year" data-source="coverage_by_year"></div>
+</div>
+</div>
+<div class="ms-sec-head">
+<h3>Articles with no Google impressions in 28 days</h3>
+<input type="search" id="cov-q" placeholder="Search titles" aria-label="Search articles with no impressions">
+</div>
+<div class="ms-scroll ms-tall">
+<table data-source="article_coverage" data-row-key="page" id="cov-table">
+<thead><tr><th data-field="title">Article</th><th data-field="language">Language</th><th data-field="created_at">Created</th><th data-field="updated_at">Last edited</th></tr></thead><tbody></tbody>
+</table>
+</div>
+<div class="ms-more"><p class="ms-muted" id="cov-count"></p><button class="ms-btn" type="button" data-more="cov">Show all</button></div>
+</div>
+
+<div class="ms-card" id="not-indexed">
+<div class="ms-sec-head">
+<div class="ms-card-head"><h2>Pages Google has not indexed</h2><p class="ms-muted">Fix the reason, then use Request indexing in Search Console's URL inspection.</p></div>
+<select id="ix-type" aria-label="Content type"><option value="">All inspected pages</option></select>
+</div>
+<div class="ms-scroll ms-tall">
+<table data-source="indexing" data-row-key="page" id="ix-table">
+<thead><tr><th data-field="content_type">Type</th><th data-field="title">Page</th><th data-field="coverage">Google's reason</th><th data-field="last_crawl">Last crawled</th></tr></thead><tbody></tbody>
+</table>
+</div>
+<p class="ms-muted" id="ix-count"></p>
+</div>
+</section>
+</div>
+
+<script src="part1.js"></script>
+
+<script src="part2.js"></script>
+
+<script src="part3.js"></script>
+
+<script src="part4.js"></script>
+
+<script src="part5.js"></script>
+<script src="layout.js"></script>
+
+</div>
+<script src="demo.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+/* dash-theme.css — the design tokens the dashboard page reads (colours, type, spacing), light and dark. */
+:root {
+  --font-sans: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+
+  --color-bg: #f7f8fa;
+  --color-panel: #ffffff;
+  --color-fg: #1d2330;
+  --color-fg-muted: #5f6878;
+  --color-border-line: #e2e5eb;
+  --color-ok: #1f7a4d;
+  --color-warn: #a35f00;
+  --color-bad: #b42318;
+
+  --dash-c0: #2f6fdf;
+  --dash-c1: #d9822b;
+  --dash-c2: #2a9d8f;
+  --dash-c3: #8e5cc9;
+  --dash-c4: #c24f7d;
+  --dash-c5: #6b8e23;
+  --dash-c6: #5a6b85;
+  --dash-c7: #b5892b;
+
+  --cds-chart-grid: #eceef2;
+  --cds-chart-axis: #c9ced8;
+  --cds-chart-muted: #c3c9d4;
+  --cds-chart-reference: #8b93a3;
+  --cds-chart-status-critical: #b42318;
+  --cds-surface-popover: #ffffff;
+  --cds-border: #d7dbe3;
+  --cds-text-secondary: #5f6878;
+  --cds-shadow-popover: 0 6px 20px rgba(20, 28, 45, 0.12);
+
+  --cds-font-size-caption: 0.78rem;
+  --cds-font-size-body: 0.9rem;
+  --cds-font-size-heading: 1.02rem;
+  --cds-font-size-title: 1.65rem;
+  --cds-font-weight-medium: 600;
+  --cds-gap-xs: 0.25rem;
+  --cds-gap-sm: 0.5rem;
+  --cds-gap-md: 0.875rem;
+  --cds-gap-lg: 1.25rem;
+  --cds-pad-xs: 0.3rem;
+  --cds-pad-sm: 0.55rem;
+  --cds-pad-md: 0.85rem;
+  --cds-pad-lg: 1.15rem;
+  --cds-radius: 10px;
+  --cds-dur-slow: 320ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #12151b;
+    --color-panel: #1a1e26;
+    --color-fg: #e8ebf1;
+    --color-fg-muted: #9aa3b2;
+    --color-border-line: #2b313c;
+    --color-ok: #4cc38a;
+    --color-warn: #f0a541;
+    --color-bad: #f27466;
+    --dash-c0: #6c9cf2;
+    --dash-c1: #f0a65e;
+    --dash-c2: #4fc1b2;
+    --dash-c3: #b38ee6;
+    --cds-chart-grid: #262b35;
+    --cds-chart-axis: #3a414e;
+    --cds-chart-muted: #4a5262;
+    --cds-chart-reference: #8790a0;
+    --cds-surface-popover: #222733;
+    --cds-border: #353c49;
+    --cds-text-secondary: #9aa3b2;
+    --cds-shadow-popover: 0 6px 20px rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #12151b;
+  --color-panel: #1a1e26;
+  --color-fg: #e8ebf1;
+  --color-fg-muted: #9aa3b2;
+  --color-border-line: #2b313c;
+  --color-ok: #4cc38a;
+  --color-warn: #f0a541;
+  --color-bad: #f27466;
+  --dash-c0: #6c9cf2;
+  --dash-c1: #f0a65e;
+  --dash-c2: #4fc1b2;
+  --dash-c3: #b38ee6;
+  --cds-chart-grid: #262b35;
+  --cds-chart-axis: #3a414e;
+  --cds-chart-muted: #4a5262;
+  --cds-chart-reference: #8790a0;
+  --cds-surface-popover: #222733;
+  --cds-border: #353c49;
+  --cds-text-secondary: #9aa3b2;
+  --cds-shadow-popover: 0 6px 20px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+body { font-family: var(--font-sans); font-size: var(--cds-font-size-body); line-height: 1.45; }
+#dash-root {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-block: 1.25rem 2.5rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.demo-banner {
+  font-size: var(--cds-font-size-caption);
+  color: var(--color-fg-muted);
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-border-line);
+  padding: 0.5rem max(16px, env(safe-area-inset-left, 0px));
+  text-align: center;
+}
+
+/* loading placeholder the page puts on elements before data arrives */
+.dash-skeleton { position: relative; color: transparent !important; }
+.dash-skeleton::after {
+  content: ""; position: absolute; left: 0; top: 50%; width: min(6rem, 100%); height: 0.8em; transform: translateY(-50%);
+  border-radius: 6px; background: var(--color-border-line);
+}
